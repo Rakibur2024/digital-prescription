@@ -12,9 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,20 +31,20 @@ public class AuthController {
     @Autowired
     JWTUtil jwtUtil;
 
-//    @PostMapping("/authenticate")
-//    public String generateToken(@RequestBody AuthRequest authRequest){
-//        try {
-//            authenticationManager.authenticate(
-//                    new UsernamePasswordAuthenticationToken(authRequest.getUsername(),authRequest.getPassword())
-//            );
-//            final UserDetails userDetails = customUserDetailsService.loadUserByUsername(authRequest.getUsername());
-//            return jwtUtil.generateToken(userDetails);
-//        } catch (Exception e){
-//            throw e;
-//        }
-//    }
     @PostMapping("/authenticate")
-    public ResponseEntity<?> generateToken(@RequestBody AuthRequest authRequest) {
+    public String generateToken(@RequestBody AuthRequest authRequest){
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getUsername(),authRequest.getPassword())
+            );
+            final UserDetails userDetails = customUserDetailsService.loadUserByUsername(authRequest.getUsername());
+            return jwtUtil.generateToken(userDetails);
+        } catch (Exception e){
+            throw e;
+        }
+    }
+    @PostMapping("/authenticateAndGetUserDetails")
+    public ResponseEntity<?> generateTokenAndGetUserDetails(@RequestBody AuthRequest authRequest) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
@@ -73,6 +71,29 @@ public class AuthController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        }
+    }
+
+    @GetMapping("/getUserData/{userName}")
+    public ResponseEntity<?> getUserDataByUserName(@PathVariable("userName") String userName){
+        try {
+            // Get user info
+            Users user = userDetailsRepo.findByUsername(userName)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Create response object
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", user.getId());
+            response.put("username", user.getUsername());
+            response.put("role", user.getRole().name());
+            response.put("doctorId", user.getDoctorId());
+            response.put("assistantId", user.getAssistantId());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
     }

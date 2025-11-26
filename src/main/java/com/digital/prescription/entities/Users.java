@@ -22,6 +22,12 @@ public class Users implements UserDetails {
     private String username;
     private String password;
 
+    @Column(name = "doctor_id")
+    private Long doctorId;
+
+    @Column(name = "assistant_id")
+    private Long assistantId;
+
     @Enumerated(EnumType.STRING) // store in string format in db
     @Column(nullable = false)
     private Role role;
@@ -81,6 +87,22 @@ public class Users implements UserDetails {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Long getDoctorId() {
+        return doctorId;
+    }
+
+    public void setDoctorId(Long doctorId) {
+        this.doctorId = doctorId;
+    }
+
+    public Long getAssistantId() {
+        return assistantId;
+    }
+
+    public void setAssistantId(Long assistantId) {
+        this.assistantId = assistantId;
     }
 
     public Role getRole() {
