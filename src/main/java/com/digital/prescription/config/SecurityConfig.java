@@ -33,6 +33,7 @@ public class SecurityConfig {
         http
                 .cors(withDefaults())
                 .csrf(csrf -> csrf.disable())
+                .logout(logout -> logout.disable())
                 .authorizeHttpRequests(
                         auth->
                                 auth
@@ -43,11 +44,13 @@ public class SecurityConfig {
                                                 "/api/user/register",
                                                 "/swagger-ui/**",
                                                 "/swagger-ui.html/**",
-                                                "/v3/api-docs/**"
+                                                "/v3/api-docs/**",
+                                                "/logout"
                                         ).permitAll()
 //                                        .requestMatchers("/security/test").hasRole(Role.ADMIN.name()) // role based authentication
 //                                        .requestMatchers(HttpMethod.GET,"/security/**").hasAuthority(Permissions.SECURITY_READ.name()) // permission based authentication
 //                                        .requestMatchers(HttpMethod.POST,"/security/**").hasAuthority(Permissions.SECURITY_WRITE.name())
+                                        //.requestMatchers("/logout").authenticated()
                                         .anyRequest().authenticated()
                 );
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

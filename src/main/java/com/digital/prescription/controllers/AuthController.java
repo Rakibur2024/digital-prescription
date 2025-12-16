@@ -2,10 +2,15 @@ package com.digital.prescription.controllers;
 
 
 import com.digital.prescription.entities.AuthRequest;
+import com.digital.prescription.entities.Token;
 import com.digital.prescription.entities.Users;
+import com.digital.prescription.repository.TokenRepository;
 import com.digital.prescription.repository.UserDetailsRepository;
 import com.digital.prescription.service.CustomUserDetailsService;
+import com.digital.prescription.service.TokenService;
+import com.digital.prescription.service.UserService;
 import com.digital.prescription.util.JWTUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 public class AuthController {
@@ -31,6 +37,15 @@ public class AuthController {
     @Autowired
     JWTUtil jwtUtil;
 
+    @Autowired
+    TokenService tokenService;
+
+    @Autowired
+    TokenRepository tokenRepo;
+
+    @Autowired
+    UserService userService;
+
     @PostMapping("/authenticate")
     public String generateToken(@RequestBody AuthRequest authRequest){
         try {
@@ -38,7 +53,12 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(authRequest.getUsername(),authRequest.getPassword())
             );
             final UserDetails userDetails = customUserDetailsService.loadUserByUsername(authRequest.getUsername());
-            return jwtUtil.generateToken(userDetails);
+            String token = jwtUtil.generateToken(userDetails);
+            Optional<Users> user = userDetailsRepo.findByUsername(userDetails.getUsername());
+
+            tokenService.saveNewToken(token,user.get().getId());
+            return token;
+            //return jwtUtil.generateToken(userDetails);
         } catch (Exception e){
             throw e;
         }
@@ -97,5 +117,24 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+
+            tokenRepo.findByToken(token).ifPresent(userToken -> {
+                //userToken.setValid(false);
+                tokenRepo.deleteById(userToken.getId());
+            });
+        }
+
+        return ResponseEntity.ok("Logged out successfully");
+    }
+
+
 
 }
