@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: docker_digital_prescription
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s   # 👈 IMPORTANT
+
+  digital-prescription:
+    build: .
+    container_name: digital-prescription
+    depends_on:
+      mysql-db:
+        condition: service_healthy   # 👈 THIS IS THE REAL FIX
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/docker_digital_prescription?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Dhaka
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    restart: always
+
+volumes:
+  mysql-data:
